@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shakwa | Admin</title>
+
+  <!-- FONTS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- STYLES -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- REACT -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+
+  <!-- Icons are self-contained SVG in shared.js — no external library needed -->
+
+  <!--
+    BACKEND INTEGRATION — Admin Dashboard (pages.js AdminPage)
+    ══════════════════════════════════════════════════════════
+    ACCESS CONTROL:
+      This page requires role="admin" or role="ministry_official" in the JWT.
+      On mount: verify JWT → check role → redirect to /dashboard if unauthorized.
+      Backend: RBAC middleware on all /api/admin/* routes.
+
+    DATA ENDPOINTS (replace all static/mock data in AdminPage):
+      KPI Cards:
+        GET /api/admin/stats/today
+          Returns: { total: int, high_priority: int, avg_resolution_hours: float, satisfaction: float }
+
+      Bar Chart (complaints by category):
+        GET /api/admin/stats/by-category?date_range=30d
+          Returns: { categories: [{ name, count, color }] }
+
+      Priority Queue:
+        GET /api/admin/complaints?sort=priority_score&order=desc&limit=10&status=submitted,review
+          Returns: { complaints: [{ id, title, location, category, priority_score, evidence_type }] }
+
+      Assign Complaint to official:
+        PATCH /api/admin/complaints/:id/assign
+          Body: { assigned_to: user_id, estimated_resolution_days: int }
+
+      Governate filter:
+        GET /api/admin/complaints?governate=cairo&status=all
+
+      Map heat data:
+        GET /api/admin/stats/heatmap
+          Returns: GeoJSON FeatureCollection with complaint density per grid cell
+          Render with: Leaflet.js heatmap plugin or Google Maps HeatmapLayer
+
+      Trend chart (last 30 days):
+        GET /api/admin/stats/trends?days=30
+          Returns: { dates: string[], submitted: int[], resolved: int[] }
+
+    ML MODEL OUTPUTS DISPLAYED HERE:
+      Priority Score (0–10):
+        Calculated by Python ML pipeline on complaint submission.
+        Formula: sentiment_weight + duplicate_cluster_weight + category_urgency + location_risk
+        Model: Gradient Boosting Classifier trained on historical complaint resolution data
+
+      Sentiment Labels:
+        Two classes only: negative / neutral  (positive removed — complaint system)
+        Model: CAMeL-BERT fine-tuned on Egyptian Arabic complaint corpus
+
+      Geographic Clustering (hotspots on map):
+        Algorithm: DBSCAN spatial clustering on (lat, lng) complaint coordinates
+        Recalculated every 6 hours via Celery background task
+
+    REAL-TIME UPDATES:
+      WebSocket: ws://your-backend/ws/admin?token=<admin_jwt>
+      Events:
+        { type: "new_complaint", data: complaint }    → prepend to priority queue
+        { type: "status_update", complaint_id, ... }  → update card in place
+        { type: "kpi_update", stats }                 → refresh KPI counters
+
+    EXPORT:
+      GET /api/admin/complaints/export?format=xlsx&governate=all&date_range=30d
+      Returns: Excel file with full complaint data for ministry reporting
+  -->
+</head>
+<body data-page="admin">
+  <div id="root"></div>
+  <script type="text/babel" src="shared.js"></script>
+  <script type="text/babel" src="pages.js"></script>
+</body>
+</html>
+

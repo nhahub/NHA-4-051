@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Shakwa | Submit Complaint</title>
+
+  <!-- FONTS -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Cairo:wght@300;400;500;600;700;800;900&family=Playfair+Display:wght@700;900&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+
+  <!-- STYLES -->
+  <link rel="stylesheet" href="style.css" />
+
+  <!-- REACT -->
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react/18.2.0/umd/react.development.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/react-dom/18.2.0/umd/react-dom.development.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/babel-standalone/7.23.2/babel.min.js"></script>
+
+  <!-- Icons are self-contained SVG in shared.js — no external library needed -->
+
+  <!--
+    CLOUDFLARE TURNSTILE — loaded on all pages for consistency.
+    On this page it is not rendered as a widget, but keeping the script here
+    ensures it is cached and ready if you add spam protection to complaint submission.
+
+    BACKEND INTEGRATION — Complaint Submission (pages.js SubmitPage → submit()):
+    ══════════════════════════════════════════════════════════════════════════════
+    STEP 1 — Location (Step 1 of form):
+      Replace mock pin with Google Maps JS API or Leaflet:
+        <script src="https://maps.googleapis.com/maps/api/js?key=YOUR_KEY&libraries=places"></script>
+      Store: { lat: number, lng: number, address: string, governate: string }
+      Backend: store as PostGIS geometry column for spatial queries
+
+    STEP 2 — Category (Step 2 of form):
+      ML auto-suggestion: POST /api/ml/suggest-category
+        Body: { text_so_far: description }
+        Returns: { suggested_category: string, confidence: float }
+      Use a fine-tuned Arabic text classifier (AraBERT or CAMeL-BERT)
+
+    STEP 3 — Description (Step 3 of form):
+      Real-time sentiment: POST /api/ml/sentiment  (debounced 500ms)
+      Duplicate detection: POST /api/ml/similar-complaints
+        Returns: { similar_count: int, cluster_id: string }
+
+    STEP 4 — Evidence (Step 4 of form):
+      Upload to: POST /api/complaints/evidence (multipart/form-data)
+      Backend stores in: Cloudflare R2 or AWS S3
+      Run: image moderation (Amazon Rekognition or Google Vision SafeSearch)
+      Returns: { evidence_urls: string[] }
+
+    STEP 5 — Submit (pages.js submit()):
+      POST /api/complaints
+        Headers: Authorization: Bearer <jwt>
+        Body: { location, category, description, sentiment, evidence_urls }
+      Backend pipeline:
+        1. Validate JWT + extract user_id
+        2. Calculate priority score via ML model
+        3. Route to ministry queue
+        4. Emit WebSocket event → Admin dashboard
+        5. SMS confirmation → Twilio/Vonage
+        6. Return { ref_number, priority_score, estimated_resolution_days }
+  -->
+  <script src="https://challenges.cloudflare.com/turnstile/v0/api.js" async defer></script>
+</head>
+<body data-page="submit">
+  <div id="root"></div>
+  <script type="text/babel" src="shared.js"></script>
+  <script type="text/babel" src="pages.js"></script>
+</body>
+</html>
+
